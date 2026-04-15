@@ -27,6 +27,10 @@ const orderSchema=mongoose.Schema({
         required:true,
         default:"Pending"
     },
+    labeledTotal:{
+      type:Number,
+      required:true
+    },
     total:{
         type:Number,
         required:true
@@ -41,7 +45,7 @@ const orderSchema=mongoose.Schema({
             type:String,
             required:true
           },
-          altNames:[{
+          altName:[{
             type:String
           }],
           description:{
@@ -51,7 +55,7 @@ const orderSchema=mongoose.Schema({
           images:[{
             type:String
           }],
-          labelledPrice:{
+          labeledPrice:{
             type:Number,
             required:true
           },
@@ -71,6 +75,6 @@ const orderSchema=mongoose.Schema({
     }
 })
 
-const Order=mongoose.Model("orders",orderSchema)
+const Order=mongoose.model("orders",orderSchema)
 
 export default Order
