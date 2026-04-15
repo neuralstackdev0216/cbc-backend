@@ -70,3 +70,7 @@ const orderSchema=mongoose.Schema({
         default:Date.now
     }
 })
+
+const Order=mongoose.Model("orders",orderSchema)
+
+export default Order
