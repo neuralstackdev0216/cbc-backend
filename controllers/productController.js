@@ -72,3 +72,65 @@ export async function deleteProduct(req,res){
         })
     }
 }
+
+export async function updateProduct(req,res){
+    if(!isAdmin(req)){
+        res.json({
+            message:"You are not authorized to update"
+        })
+        return
+    }else{
+        const productId=req.params.productId;
+        const updateData=req.body
+
+        try{
+            await Product.updateOne(
+                {productId:productId},
+                updateData
+            )
+            res.json({
+                message:"Product Update Successfully"
+            })
+
+        }catch(err){
+            res.status(500).json({
+                message:"Internal Server Error",
+                err:err
+            })
+        }
+    }
+}
+
+export async function getProductById(req,res){
+    const productId=req.params.productId
+    try{
+        const product=await Product.findOne(
+            {productId:productId}
+        )
+        if(product == null){
+            res.status(404).json({
+                message:"Product Not Found"
+            })
+        return
+        }
+        if(product.isAvailable){
+            res.json(product)
+        }else{
+            if(!isAdmin(req)){
+                res.status(404).json({
+                message:"Product Not Found"
+                }) 
+                return
+            }else{
+                res.json(product)
+            }
+        }
+
+
+    }catch(err){
+        res.status(500).json({
+            message:"Internal Server Error",
+            err:err
+        })
+    }
+}
