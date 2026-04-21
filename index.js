@@ -5,10 +5,15 @@ import productRouter from './routes/productRouter.js';
 import userRouter from './routes/userRoute.js';
 import jwt from 'jsonwebtoken'
 import orderRouter from './routes/orderRoute.js';
+import cors from 'cors';
+import dotenv from 'dotenv'
 
+dotenv.config();
 const app=express();
+
+app.use(cors())
 app.use(bodyParser.json())
-mongoose.connect("mongodb://admin:123@ac-qyvlmli-shard-00-00.ueqrlui.mongodb.net:27017,ac-qyvlmli-shard-00-01.ueqrlui.mongodb.net:27017,ac-qyvlmli-shard-00-02.ueqrlui.mongodb.net:27017/?ssl=true&replicaSet=atlas-kpfgqf-shard-0&authSource=admin&appName=Cluster0").then(() => {
+mongoose.connect(process.env.MONGODB_URL).then(() => {
     console.log("Connected to the database");
 })
 .catch((err) => {
@@ -21,7 +26,7 @@ app.use((req,res,next)=>{
         const token=tokenString.replace("Bearer ","")
         //console.log(token)
 
-        jwt.verify(token,"cbc-batch-five#@2025",(err,decoded)=>{
+        jwt.verify(token,process.env.SECRET_KEY,(err,decoded)=>{
             if(decoded!=null){
                 //console.log(decoded)
                 req.user=decoded
@@ -29,7 +34,7 @@ app.use((req,res,next)=>{
             }
             else{
                 console.log("Invalid Token");
-                res.status(403).json({
+                return res.status(403).json({
                     message:"Invalid Token"
                 })
             }
@@ -41,9 +46,9 @@ app.use((req,res,next)=>{
     
 })
 
-app.use("/products",productRouter)
-app.use("/users",userRouter)
-app.use("/orders",orderRouter)
+app.use("/api/products",productRouter)
+app.use("/api/users",userRouter)
+app.use("/api/orders",orderRouter)
 
 
 app.listen(5000,()=>{

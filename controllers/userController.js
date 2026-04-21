@@ -1,7 +1,9 @@
 import User from "../models/user.js";
 import bcrypt from 'bcrypt'
 import jwt from 'jsonwebtoken'
+import dotenv from 'dotenv'
 
+dotenv.config();
 export function createUser(req,res){
     if(req.body.role=="admin"){
         if(req.user!=null){
@@ -44,24 +46,24 @@ export function loginUser(req,res){
     const password=req.body.password;
     User.findOne({email:email}).then((user)=>{
         if(user == null){
-            res.status(404).json({
+            return res.status(404).json({
                 message:"User not found"
             })
         }
         else{
             const isPasswordCorrect=bcrypt.compareSync(password,user.password)
-
-            const token=jwt.sign({
-                firstName:user.firstName,
-                lastName:user.lastName,
-                email:user.lastName,
-                role:user.role,
-                img:user.img
-            },
-            "cbc-batch-five#@2025"
-        )
-
             if(isPasswordCorrect){
+                const token=jwt.sign({
+                    firstName:user.firstName,
+                    lastName:user.lastName,
+                    email:user.email,
+                    role:user.role,
+                    img:user.img
+                },
+                process.env.SECRET_KEY
+                )
+
+            
                 res.json({
                     message:"Login Successfull",
                     token:token
