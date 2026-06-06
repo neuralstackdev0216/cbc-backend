@@ -1,12 +1,12 @@
-import express from 'express';
+import express from 'express'; 
 import bodyParser from 'body-parser';
 import mongoose from 'mongoose';
 import productRouter from './routes/productRouter.js';
 import userRouter from './routes/userRoute.js';
-import jwt from 'jsonwebtoken'
+import jwt from 'jsonwebtoken';
 import orderRouter from './routes/orderRoute.js';
 import cors from 'cors';
-import dotenv from 'dotenv'
+import dotenv from 'dotenv';
 
 dotenv.config();
 const app=express();
