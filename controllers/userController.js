@@ -4,7 +4,6 @@ import jwt from 'jsonwebtoken'
 import dotenv from 'dotenv'
 
 dotenv.config();
-
 export function createUser(req,res){
     if(req.body.role=="admin"){
         if(req.user!=null){
@@ -67,8 +66,7 @@ export function loginUser(req,res){
             
                 res.json({
                     message:"Login Successfull",
-                    token:token,
-                    role:user.role
+                    token:token
                 })
             }
             else{
