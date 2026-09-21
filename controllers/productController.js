@@ -2,14 +2,6 @@ import Product from "../models/product.js";
 import { isAdmin } from "./userController.js";
 
 export async function getProducts(req,res){
-    // Product.find().then((data)=>{
-    //     res.json(data)
-    // }).catch((err)=>{
-    //     res.json({
-    //         message:"Failed to get Products",
-    //         error:err
-    //     })
-    // })
 
     try{
         if(isAdmin(req)){
