@@ -126,3 +126,42 @@ export async function getProductById(req,res){
         })
     }
 }
+
+export async function searchProduct(req, res) {
+    const searchQuery = req.params.searchQuery
+
+    try {
+        const products = await Product.find({
+            $or: [
+                {
+                    name: {
+                        $regex: searchQuery,
+                        $options: "i",
+                    },
+                },
+                {
+                    altName: {
+                        $elemMatch: {
+                            $regex: searchQuery,
+                            $options: "i",
+                        },
+                    },
+                },
+                {
+                    description: {
+                        $regex: searchQuery,
+                        $options: "i",
+                    },
+                },
+            ],
+            isAvailable: true,
+        });
+
+        res.json(products);
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: error.message,
+        });
+    }
+}

@@ -251,6 +251,20 @@ export async function resetPassword(req,res){
         return
     }
 }
+
+export function getUser(req,res){
+    if(req.user==null){
+        res.status(401).json({
+            message:"Unauthorized"
+        })
+        return
+    }else{
+        res.json({
+            ...req.user
+        })
+    }
+}
+
 export function isAdmin(req){
     if(req.user==null){
         return false
