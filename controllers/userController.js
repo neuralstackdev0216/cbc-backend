@@ -150,8 +150,8 @@ const transporter=nodemailer.createTransport(
         port:587,
         secure:false,
         auth:{
-            user:"neuralstack.dev@gmail.com",
-            pass:"ntznzjjavuweejro"
+            user:process.env.EMAIL_USER,
+            pass:process.env.EMAIL_PASS
         }
     }
 )
@@ -181,10 +181,10 @@ export async function sendOTP(req,res){
     )
 
     const message={
-        from:"neuralstack.dev@gmail.com",
+        from:process.env.EMAIL_USER,
         to:email,
-        subject:"Resetting password for MobileShop clear.",
-        text:"This your password rest OTP:"+randomOTP
+        subject:"Reset your Mobile Shop password",
+        text:"Your Mobile Shop password reset code is: "+randomOTP
     }
 
     const otp=new OTP({
@@ -202,8 +202,7 @@ export async function sendOTP(req,res){
             })            
         }else{
             res.json({
-                message:"OTP sent successfully",
-                otp:randomOTP
+                message:"OTP sent successfully"
             })
         }
     })

@@ -34,11 +34,27 @@ export async function createOrder(req,res){
 
     try {
 
+        if(!Array.isArray(orderInfo.products) || orderInfo.products.length==0){
+            res.status(400).json({
+                message:"Order must contain at least one product"
+            })
+            return
+        }
+
         let total=0;
         let labeledTotal=0;
         const products=[]
 
         for(let i=0;i<orderInfo.products.length;i++){
+            
+            const qty=Number(orderInfo.products[i].qty)
+            if(!Number.isInteger(qty) || qty<=0){
+                res.status(400).json({
+                    message:"Invalid quantity for products "+orderInfo.products[i].productId
+                })
+                return
+            }
+            
             const item=await Product.findOne({productId:orderInfo.products[i].productId})
             if(item==null){
                 res.status(404).json({
@@ -52,6 +68,14 @@ export async function createOrder(req,res){
                 })
                 return 
             }
+
+            if(item.stock<qty){
+                res.status(400).json({
+                    message:item.name+" has only "+item.stock + " left in stock."
+                })
+                return
+            }
+
             products[i]={
                 productInfo:{
                     productId:item.productId,
@@ -79,6 +103,18 @@ export async function createOrder(req,res){
         })
 
         const createdOrder=await order.save()
+        for(let i=0;i<orderInfo.products.length;i++){
+            await Product.updateOne(
+                {
+                    productId:orderInfo.products[i].productId
+                },
+                {
+                    $inc:{
+                        stock:-orderInfo.products[i].qty
+                    }
+                }
+            )
+        }
         res.json({
             message:"Order Created Successfully",
             order : createdOrder

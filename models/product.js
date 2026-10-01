@@ -40,7 +40,26 @@ const productSchema=mongoose.Schema({
         type:Boolean,
         required:true,
         default:true
-    }
+    },
+    brand:{
+        type:String,
+        default:"Others"
+    },
+    category:{
+        type:String,
+        default:"Smartphones"
+    },
+    specs:[
+        {
+            _id:false,
+            label:{
+                type:String
+            },
+            value:{
+                type:String
+            }
+        }
+    ]
 
 });
 

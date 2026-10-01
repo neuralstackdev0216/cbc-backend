@@ -2,23 +2,27 @@ import Product from "../models/product.js";
 import { isAdmin } from "./userController.js";
 
 export async function getProducts(req,res){
-
     try{
-        if(isAdmin(req)){
-            const products=await Product.find()
-            res.json(products)
+        const filter={}
+        if(req.query.category){
+            filter.category=req.query.category
         }
-        else{
-            const products=await Product.find({isAvailable:true})
-            res.json(products)
+        if(req.query.brand){
+            filter.brand=req.query.brand
         }
-    }
-    catch(err){
-        res.json({
-            message:"Failed to fetch the products",
+        if(!isAdmin(req)){
+            filter.isAvailable=true
+        }
+        const products=await Product.find(filter)
+        res.json(products)
+
+    }catch(err){
+        res.status(500).json({
+            message:"Failed to fetch products",
             error:err
         })
     }
+
 }
 
 export function saveProduct(req,res){
@@ -128,7 +132,7 @@ export async function getProductById(req,res){
 }
 
 export async function searchProduct(req, res) {
-    const searchQuery = req.params.searchQuery
+        const searchQuery = req.params.searchQuery.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
 
     try {
         const products = await Product.find({
@@ -153,6 +157,12 @@ export async function searchProduct(req, res) {
                         $options: "i",
                     },
                 },
+                {
+                    brand:{
+                        $regex:searchQuery,
+                        $options:"i"
+                    }
+                }
             ],
             isAvailable: true,
         });

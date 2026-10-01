@@ -55,4 +55,3 @@ app.listen(5000,()=>{
     console.log("Server is running on port 5000");
 })
 
-// mongodb+srv://admin:123@cluster0.ueqrlui.mongodb.net/?appName=Cluster0
