@@ -55,6 +55,11 @@ export function loginUser(req,res){
             })
         }
         else{
+            if(user.isBlocked){
+                return res.status(403).json({
+                    message:"Your acccount has been blocked.Please contact support."
+                })
+            }
             const isPasswordCorrect=bcrypt.compareSync(password,user.password)
             if(isPasswordCorrect){
                 const token=jwt.sign({
@@ -128,6 +133,12 @@ const response=await axios.get("https://www.googleapis.com/oauth2/v3/userinfo",{
         role:newUser.role
     })
  }else{
+    if(user.isBlocked){
+        res.status(403).json({
+            message:"Your account has been blocked. Please contact support."
+        })
+        return 
+    }
     const token = jwt.sign({
         firstName:user.firstName,
         lastName:user.lastName,
@@ -272,4 +283,63 @@ export function isAdmin(req){
         return false
     }
     return true
+}
+
+export async function getAllUsers(req,res){
+    if(!isAdmin(req)){
+        res.status(403).json({
+            message:"You are not authorized to view users"
+        })
+        return
+    }
+    try{
+        const users=await User.find().select("-password")
+        res.json({
+            users:users
+        })
+    }catch(err){
+        res.status(500).json({
+            message:"Failed to fetch users"
+        })
+    }
+}
+
+export async function changeUserBlockStatus(req,res){
+    if(!isAdmin(req)){
+        res.status(403).json({
+            message:"You are not authorized to block or unblock users"
+        })
+        return
+    }
+    if(typeof req.body.isBlocked !== "boolean"){
+        res.status(400).json({
+            message:"isBlocked must be true or false"
+        })
+        return 
+    }
+    try{
+        const email=req.params.email
+        const user=await User.findOne({email:email})
+        if(user==null){
+            res.status(404).json({
+                messsage:"User not found"
+            })
+            return
+        }
+        if(user.role=="admin"){
+            res.status(403).json({
+                message:"Admin accounts cannot be blocked"
+            })
+            return 
+        }
+        await User.updateOne({email:email},{isBlocked:req.body.isBlocked})
+        res.json({
+            message:req.body.isBlocked?"User blocked":"User unblocked"
+        })
+
+    }catch(err){
+        res.status(500).json({
+            message:"Failed to update user"
+        })
+    }
 }

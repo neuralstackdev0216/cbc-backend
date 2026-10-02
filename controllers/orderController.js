@@ -1,11 +1,19 @@
 import Order from "../models/order.js"
 import Product from "../models/product.js";
 import { isAdmin } from "./userController.js";
+import User from "../models/user.js"
 
 export async function createOrder(req,res){
     if(req.user==null){
         res.status(403).json({
             message:"Please Login and try again"
+        })
+        return
+    }
+    const dbUser=await User.findOne({email:req.user.email})
+    if(dbUser==null || dbUser.isBlocked){
+        res.status(403).json({
+            message:"Your account is blocked.Please contact support."
         })
         return
     }
@@ -136,7 +144,7 @@ export async function getOrders(req,res){
         return
     }
     try {
-        if(req.user.role=="admin"){
+        if(req.user.role=="admin" && req.query.mine!="true"){
             const orders=await Order.find()
             res.json({
                 //message:"Orders fetched successfully",
@@ -167,6 +175,43 @@ export async function updateOrderStatus(req,res){
     try{
         const orderId=req.params.orderId
         const status=req.params.status
+
+        const allowed=["Pendig","Processing","Shipped","Delivered","Canceled"]
+        if(!allowed.includes(status)){
+            res.status(400).json({
+                message:"Invalid status"
+            })
+            return
+        }
+        const order=await Order.findOne({orderId:orderId})
+        if(order==null){
+            res.status(404).json({
+                message:"Order not found"
+            })
+            return
+        }
+        if(order.status=="Canceled" && status!="Cancelled"){
+            res.status(400).json({
+                message:"A cancelled order cannot be reopened"
+            })
+            return
+        }
+
+        if(status=="Canceled" && order.stats!="Cancelled"){
+            for(let i=0;i<order.products.length;i++){
+                await Product.updateOne(
+                    {
+
+                        productId:order.products[i].productInfo.productId
+                    },
+                    {
+                        $inc:{
+                            stock:order.products[i].quantity
+                        }
+                    }
+                )
+            }
+        }
 
         await Order.updateOne(
             {
