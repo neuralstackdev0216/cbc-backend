@@ -5,6 +5,7 @@ import dotenv from 'dotenv'
 import axios from "axios"
 import nodemailer from "nodemailer"
 import OTP from "../models/otp.js"
+import { generateToken } from "../utils/generateToken.js";
 
 dotenv.config();
 
@@ -62,15 +63,7 @@ export function loginUser(req,res){
             }
             const isPasswordCorrect=bcrypt.compareSync(password,user.password)
             if(isPasswordCorrect){
-                const token=jwt.sign({
-                    firstName:user.firstName,
-                    lastName:user.lastName,
-                    email:user.email,
-                    role:user.role,
-                    img:user.img
-                },
-                process.env.SECRET_KEY
-                )
+                const token=generateToken(user);
 
             
                 res.json({
@@ -118,15 +111,7 @@ const response=await axios.get("https://www.googleapis.com/oauth2/v3/userinfo",{
         }
     )
     await newUser.save()
-    const token = jwt.sign({
-        firstName:newUser.firstName,
-        lastName:newUser.lastName,
-        email:newUser.email,
-        role:newUser.role,
-        img:newUser.img
-    },
-    process.env.SECRET_KEY 
-    )
+    const token = generateToken(newUser);
     res.json({
         message:"Login Successfull",
         token:token,
@@ -139,15 +124,7 @@ const response=await axios.get("https://www.googleapis.com/oauth2/v3/userinfo",{
         })
         return 
     }
-    const token = jwt.sign({
-        firstName:user.firstName,
-        lastName:user.lastName,
-        email:user.email,
-        role:user.role,
-        img:user.img
-    },
-    process.env.SECRET_KEY 
-    )
+    const token = generateToken(user);
     res.json({
         message:"Login Successfull",
         token:token,
