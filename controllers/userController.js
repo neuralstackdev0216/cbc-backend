@@ -450,3 +450,219 @@ export async function changeUserBlockStatus(req, res) {
     });
   }
 }
+
+
+export async function updateProfile(req, res) {
+  try {
+    if (!req.user) {
+      return res.status(401).json({
+        message: "Please log in"
+      });
+    }
+
+    const { firstName, lastName, img } = req.body || {};
+
+    // Validate first name and last name
+    if (
+      typeof firstName !== "string" ||
+      typeof lastName !== "string" ||
+      !firstName.trim() ||
+      !lastName.trim() ||
+      firstName.trim().length > 50 ||
+      lastName.trim().length > 50
+    ) {
+      return res.status(400).json({
+        message: "First name and last name must contain 1-50 characters"
+      });
+    }
+
+    // Only allow approved fields to be updated
+    const updates = {
+      firstName: firstName.trim(),
+      lastName: lastName.trim()
+    };
+
+    // Optional profile image
+    if (img !== undefined) {
+      if (
+        typeof img !== "string" ||
+        img.length > 2048
+      ) {
+        return res.status(400).json({
+          message: "Invalid profile image"
+        });
+      }
+
+      const imageUrl = img.trim();
+
+      if (imageUrl !== "") {
+        try {
+          const parsedUrl = new URL(imageUrl);
+
+          if (
+            parsedUrl.protocol !== "https:" ||
+            parsedUrl.username ||
+            parsedUrl.password
+          ) {
+            throw new Error("Invalid image URL");
+          }
+        } catch {
+          return res.status(400).json({
+            message: "Profile image must be a valid HTTPS URL"
+          });
+        }
+      }
+
+      updates.img = imageUrl;
+    }
+
+    // Update only the authenticated user's account
+    const updatedUser = await User.findOneAndUpdate(
+      {
+        email: req.user.email,
+        isBlocked: false
+      },
+      {
+        $set: updates
+      },
+      {
+        new: true,
+        runValidators: true
+      }
+    );
+
+    if (!updatedUser) {
+      return res.status(404).json({
+        message: "Account unavailable"
+      });
+    }
+
+    return res.status(200).json({
+      message: "Profile updated successfully",
+      user: publicUser(updatedUser)
+    });
+
+  } catch (error) {
+    console.error("Profile update error:", error.message);
+
+    return res.status(500).json({
+      message: "Failed to update profile"
+    });
+  }
+}
+
+
+
+export async function changePassword(req, res) {
+  try {
+    if (!req.user) {
+      return res.status(401).json({
+        message: "Please log in"
+      });
+    }
+
+    const {
+      currentPassword,
+      newPassword
+    } = req.body || {};
+
+    // Validate password fields
+    if (
+      typeof currentPassword !== "string" ||
+      !currentPassword ||
+      currentPassword.length > 128
+    ) {
+      return res.status(400).json({
+        message: "Current password is required"
+      });
+    }
+
+    if (
+      !validPassword(newPassword) ||
+      Buffer.byteLength(newPassword, "utf8") > 72
+    ) {
+      return res.status(400).json({
+        message: "New password must contain at least 8 characters and must not exceed 72 UTF-8 bytes"
+      });
+    }
+
+    // Find the authenticated user
+    const user = await User.findOne({
+      email: req.user.email,
+      isBlocked: false
+    });
+
+    if (!user) {
+      return res.status(404).json({
+        message: "Account unavailable"
+      });
+    }
+
+    // Verify the current password
+    const matches = await bcrypt.compare(
+      currentPassword,
+      user.password
+    );
+
+    if (!matches) {
+      return res.status(400).json({
+        message: "Current password is incorrect"
+      });
+    }
+
+    // Prevent reuse of the current password
+    const samePassword = await bcrypt.compare(
+      newPassword,
+      user.password
+    );
+
+    if (samePassword) {
+      return res.status(400).json({
+        message: "New password must be different from the current password"
+      });
+    }
+
+    // Hash the new password
+    const hashedPassword = await bcrypt.hash(
+      newPassword,
+      12
+    );
+
+    // Update password safely
+    const result = await User.updateOne(
+      {
+        _id: user._id,
+        password: user.password,
+        isBlocked: false
+      },
+      {
+        $set: {
+          password: hashedPassword
+        }
+      }
+    );
+
+    if (result.matchedCount !== 1) {
+      return res.status(409).json({
+        message: "Account changed. Please try again"
+      });
+    }
+
+    // Remove any outstanding password reset OTP
+    await OTP.deleteOne({
+      email: user.email
+    });
+
+    return res.status(200).json({
+      message: "Password changed successfully"
+    });
+
+  } catch (error) {
+    console.error("Change password error:", error.message);
+
+    return res.status(500).json({
+      message: "Failed to change password"
+    });
+  }
+}
+
